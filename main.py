@@ -6,7 +6,7 @@ import numpy as np
 
 from functools import partial
 from tkinter import *
-from tkinter.filedialog import asksaveasfile
+from tkinter.filedialog import asksaveasfile,askopenfile
 
 from matplotlib import pyplot as plt
 
@@ -14,7 +14,6 @@ from matplotlib.backends.backend_tkagg import (FigureCanvasTkAgg,
                                                NavigationToolbar2Tk)
 
 matplotlib.use('TkAgg')
-
 
 # class for entries storage (класс для хранения текстовых полей)
 class Entries:
@@ -71,6 +70,11 @@ class Entries:
             plot_button.pack_forget()
         self.parent_window.add_button('plot', 'Plot', 'plot', hot_key='<Return>')
 
+    def reset_list(self):
+        for entry in self.entries_list:
+            entry.pack_forget()
+        self.entries_list.clear()
+
 # class for plotting (класс для построения графиков)
 class Plotter:
     def __init__(self, x_min=-20, x_max=20, dx=0.01):
@@ -119,6 +123,12 @@ class Commands:
                 json.dump(tmp_dict, file_out)
             return self
 
+        def load_state(self):
+            file_in = askopenfile()
+            if file_in is not None:
+                tmp_dict = json.load(file_in)
+                self.list_of_function = tmp_dict.get('list_of_function')
+
         def reset_state(self):
             self.list_of_function = []
 
@@ -130,7 +140,7 @@ class Commands:
         self.__empty_entry_counter = 0
         self.parent_window = None
 
-    def set_parent_window(self, parent_window):
+    def set_parent_window(self, parent_window : 'App'):
         self.parent_window = parent_window
 
     def add_command(self, name, command):
@@ -194,7 +204,17 @@ class Commands:
     def save_as(self):
         self._state.save_state()
         return self
-
+    def load_from_file(self, *args, **kwargs):
+        self._state.load_state()
+        if self.parent_window is None:
+            return self
+        entries = self.parent_window.entries
+        entries.reset_list()
+        for func in self._state.list_of_function:
+            entry = entries.add_entry()
+            entry.insert(0,func)
+        entries.entries_list[0].focus_set()
+        return self
 
 # class for buttons storage (класс для хранения кнопок)
 class Buttons:
@@ -277,6 +297,8 @@ class App(Tk):
 
         file_menu = Menu(menu)
         file_menu.add_command(label="Save as...", command=self.commands.get_command_by_name('save_as'))
+        file_menu.add_command(label="Load file", command=self.commands.get_command_by_name('load_file'))
+        self.bind("<Control-o>",self.commands.get_command_by_name('load_file'))
         menu.add_cascade(label="File", menu=file_menu)
 
 
@@ -294,6 +316,7 @@ if __name__ == "__main__":
     commands_main.add_command('plot', commands_main.plot)
     commands_main.add_command('add_func', commands_main.add_func)
     commands_main.add_command('save_as', commands_main.save_as)
+    commands_main.add_command('load_file',commands_main.load_from_file)
     commands_main.add_command('rm_func', commands_main.rm_func)
     # init app (создаем экземпляр приложения)
     app = App(buttons_main, plotter_main, commands_main, entries_main)
