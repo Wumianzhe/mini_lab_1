@@ -36,17 +36,32 @@ class Entries:
             plot_button.pack_forget()
         self.parent_window.add_button('plot', 'Plot', 'plot', hot_key='<Return>')
         self.entries_list.append(new_entry)
+        return new_entry
 
     def remove_entry(self):
         entry = self.parent_window.focus_get()
+        # still want to chek if it's an entry
+        if entry not in self.entries_list:
+            return
         if len(self.entries_list) < 2:
             # don't want to deal with empty list
             mw = ModalWindow(self.parent_window, title='', labeltext= 'Удаление последнего поля ввода невозможно')
             ok_button = Button(master=mw.top, text = 'OK', command=mw.cancel)
             mw.add_button(ok_button)
+            return
         else:
+            if len(entry.get()) != 0:
+                # check content and warn
+                mw = ModalWindow(self.parent_window, title='', labeltext = 'Вы точно хотите удалить непустое поле?')
+                yes_button = Button(master=mw.top, text = 'Да', command=mw.ok)
+                no_button = Button(master=mw.top, text = 'Нет', command=mw.cancel)
+                mw.add_button(yes_button)
+                mw.add_button(no_button)
+                choice = mw.result()
+                if choice == 0:
+                    return
             entry.pack_forget()
-            # to keep focus and avoid need to check existence of entry in list
+            # move focus to existing entry
             prev_index = max(self.entries_list.index(entry)-1,0)
             self.entries_list.remove(entry)
             self.entries_list[prev_index].focus_set()
@@ -208,6 +223,7 @@ class ModalWindow:
         self.top = Toplevel(parent)
         self.top.transient(parent)
         self.top.grab_set()
+        self.var = 0
         if len(title) > 0:
             self.top.title(title)
         if len(labeltext) == 0:
@@ -219,7 +235,14 @@ class ModalWindow:
         button.pack(pady=5)
 
     def cancel(self):
+        self.var = 0
         self.top.destroy()
+    def ok(self):
+        self.var = 1
+        self.top.destroy()
+    def result(self):
+        self.top.wait_window()
+        return self.var
 
 
 # app class (класс приложения)
