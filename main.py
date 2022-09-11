@@ -19,7 +19,7 @@ matplotlib.use('TkAgg')
 # class for entries storage (класс для хранения текстовых полей)
 class Entries:
     def __init__(self):
-        self.entries_list = []
+        self.entries_list : list[Entry] = []
         self.parent_window = None
 
     def set_parent_window(self, parent_window):
@@ -37,6 +37,24 @@ class Entries:
         self.parent_window.add_button('plot', 'Plot', 'plot', hot_key='<Return>')
         self.entries_list.append(new_entry)
 
+    def remove_entry(self):
+        entry = self.parent_window.focus_get()
+        if len(self.entries_list) < 2:
+            # don't want to deal with empty list
+            mw = ModalWindow(self.parent_window, title='', labeltext= 'Удаление последнего поля ввода невозможно')
+            ok_button = Button(master=mw.top, text = 'OK', command=mw.cancel)
+            mw.add_button(ok_button)
+        else:
+            entry.pack_forget()
+            # to keep focus and avoid need to check existence of entry in list
+            prev_index = max(self.entries_list.index(entry)-1,0)
+            self.entries_list.remove(entry)
+            self.entries_list[prev_index].focus_set()
+        # redraw plot_button
+        plot_button = self.parent_window.get_button_by_name('plot')
+        if plot_button:
+            plot_button.pack_forget()
+        self.parent_window.add_button('plot', 'Plot', 'plot', hot_key='<Return>')
 
 # class for plotting (класс для построения графиков)
 class Plotter:
@@ -153,6 +171,11 @@ class Commands:
         self.__forget_navigation()
         self.parent_window.entries.add_entry()
 
+    def rm_func(self, *args, **kwargs):
+        self.__forget_canvas()
+        self.__forget_navigation()
+        self.parent_window.entries.remove_entry()
+
     def save_as(self):
         self._state.save_state()
         return self
@@ -167,7 +190,7 @@ class Buttons:
     def set_parent_window(self, parent_window):
         self.parent_window = parent_window
 
-    def add_button(self, name, text, command):
+    def add_button(self, name : str, text : str, command):
         new_button = Button(master=self.parent_window, text=text, command=command)
         self.buttons[name] = new_button
         return new_button
@@ -201,7 +224,7 @@ class ModalWindow:
 
 # app class (класс приложения)
 class App(Tk):
-    def __init__(self, buttons, plotter, commands, entries):
+    def __init__(self, buttons : Buttons, plotter : Plotter, commands : Commands, entries : Entries):
         super().__init__()
         self.buttons = buttons
         self.plotter = plotter
@@ -212,7 +235,7 @@ class App(Tk):
         self.commands.set_parent_window(self)
         self.buttons.set_parent_window(self)
 
-    def add_button(self, name, text, command_name, *args, **kwargs):
+    def add_button(self, name : str, text : str, command_name : str, *args, **kwargs):
         hot_key = kwargs.get('hot_key')
         if hot_key:
             kwargs.pop('hot_key')
@@ -222,7 +245,7 @@ class App(Tk):
             self.bind(hot_key, callback)
         new_button.pack(fill=BOTH)
 
-    def get_button_by_name(self, name):
+    def get_button_by_name(self, name : str):
         return self.buttons.buttons.get(name)
 
     def create_menu(self):
@@ -248,10 +271,12 @@ if __name__ == "__main__":
     commands_main.add_command('plot', commands_main.plot)
     commands_main.add_command('add_func', commands_main.add_func)
     commands_main.add_command('save_as', commands_main.save_as)
+    commands_main.add_command('rm_func', commands_main.rm_func)
     # init app (создаем экземпляр приложения)
     app = App(buttons_main, plotter_main, commands_main, entries_main)
     # init add func button (добавляем кнопку добавления новой функции)
     app.add_button('add_func', 'Добавить функцию', 'add_func', hot_key='<Control-a>')
+    app.add_button('rm_func','Удалить функцию','rm_func', hot_key='<Control-d>')
     # init first entry (создаем первое поле ввода)
     entries_main.add_entry()
     app.create_menu()
