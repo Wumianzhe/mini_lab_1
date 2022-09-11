@@ -150,8 +150,10 @@ class Commands:
         return self.command_dict[command_name]
 
     def __forget_canvas(self):
-        if self.__figure_canvas is not None:
-            self.__figure_canvas.get_tk_widget().pack_forget()
+        # in debugger: "Commands object has no attribute '__figure_canvas'". Don't know the reason, but it's _Commands__figure_canvas
+        # and it indeed works and has fixed buttons appearing under canvas if loaded from file
+        if self._Commands__figure_canvas is not None:
+            self._Commands__figure_canvas.get_tk_widget().pack_forget()
 
     def __forget_navigation(self):
         if self.__navigation_toolbar is not None:
@@ -206,8 +208,7 @@ class Commands:
         return self
     def load_from_file(self, *args, **kwargs):
         self._state.load_state()
-        if self.parent_window is None:
-            return self
+        self.__forget_canvas()
         entries = self.parent_window.entries
         entries.reset_list()
         for func in self._state.list_of_function:
