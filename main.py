@@ -256,5 +256,7 @@ if __name__ == "__main__":
     entries_main.add_entry()
     app.create_menu()
     # добавил комментарий для коммита
+    # Handle WM_DELETE_WINDOW
+    app.protocol("WM_DELETE_WINDOW",app.destroy)
     # application launch (запуск "вечного" цикла приложеня)
     app.mainloop()

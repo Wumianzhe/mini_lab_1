@@ -2,3 +2,6 @@
 venv*/
 venv*.bak/
 .idea
+
+# I don't need exports to be tracked
+*.json
