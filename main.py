@@ -124,7 +124,7 @@ class Commands:
             return self
 
         def load_state(self):
-            file_in = askopenfile()
+            file_in = askopenfile(filetypes=[("function objects",".json")])
             if file_in is not None:
                 tmp_dict = json.load(file_in)
                 self.list_of_function = tmp_dict.get('list_of_function')
