@@ -209,11 +209,18 @@ class Commands:
     def load_from_file(self, *args, **kwargs):
         self._state.load_state()
         self.__forget_canvas()
+        # resulting list of entries can only be empty if file existed but had no functions
+        # as if nothing was loaded, state is not reset
+        # if entries are not reset at all, it may create impression that loading failed
         entries = self.parent_window.entries
         entries.reset_list()
-        for func in self._state.list_of_function:
-            entry = entries.add_entry()
-            entry.insert(0,func)
+        if len(self._state.list_of_function) == 0:
+            entries.add_entry()
+        else:
+            for func in self._state.list_of_function:
+                entry = entries.add_entry()
+                entry.insert(0,func)
+        self.plot()
         entries.entries_list[0].focus_set()
         return self
 
